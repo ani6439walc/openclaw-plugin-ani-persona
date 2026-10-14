@@ -1,7 +1,7 @@
 {
   "name": "openclaw-plugin-ani-persona",
   "version": "0.1.0",
-  "description": "Request one Ani persona revision before an OpenClaw agent finalizes its reply.",
+  "description": "Rewrite outgoing OpenClaw replies with a tool-free Ani completion.",
   "type": "module",
   "license": "MIT",
   "files": ["dist/", "skills/", "openclaw.plugin.json", "README.md", "LICENSE"],
