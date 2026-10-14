@@ -15,21 +15,21 @@ const safeDiscord = () => ({ streaming: { mode: "off", block: { enabled: false }
 const context = (patch = {}) => ({ sessionKey: "agent:main:discord:channel:123", runId: "run-1", channelId: "discord", accountId: "default", ...patch });
 const event = (patch = {}) => ({ kind: "final", payload: { text: "ORIGINAL" }, ...patch });
 function setup({ complete = async () => ({ text: "Ani final" }), config = { channels: { discord: safeDiscord() } }, timeout = 100, hostTimeout } = {}) {
-  const typedHooks = [], calls = [], warnings = [];
+  const typedHooks = [], calls = [], warnings = [], audit = [];
   const api = {
     pluginConfig: { agentIds: ["main"], rewriteTimeoutMs: timeout }, config,
     runtime: { config: { current: () => config }, subagent: { complete(args) { calls.push(args); return complete(args); } } },
-    logger: { warn: text => warnings.push(text) },
+    logger: { warn: text => warnings.push(text), info: text => audit.push(text) },
     on(hookName, handler, options) { typedHooks.push({ pluginId: "ani-persona", hookName, handler, ...options }); },
   };
   plugin.register(api);
   if (hostTimeout) typedHooks.find(h => h.hookName === "reply_payload_sending").timeoutMs = hostTimeout;
   const runner = createHookRunner({ typedHooks, plugins: [], hooks: [] });
-  return { runner, calls, config, warnings, hooks: typedHooks };
+  return { runner, calls, config, warnings, audit, hooks: typedHooks };
 }
 
 test("real hook runner replaces final text, preserves attachments and uses bundled skill/context", async () => {
-  const { runner, calls } = setup();
+  const { runner, calls, audit } = setup();
   await runner.runBeforePromptBuild({ prompt: "user request", currentUserMessage: "用繁體中文" }, { agentId: "main", runId: "run-1" });
   const payload = { text: "ORIGINAL", mediaUrl: "https://example.com/file.png", replyToId: "123" };
   const result = await runner.runReplyPayloadSending(event({ payload }), context());
@@ -40,6 +40,9 @@ test("real hook runner replaces final text, preserves attachments and uses bundl
   assert.equal(JSON.parse(calls[0].message).userContext, "用繁體中文");
   for (const file of ["SKILL.md", "assets/SOUL.md", "assets/IDENTITY.md", "references/"]) assert.ok(calls[0].extraSystemPrompt.includes(file));
   assert.equal(calls[0].tools, undefined);
+  assert.equal(audit.length, 1);
+  assert.match(audit[0], /draftSha256=[0-9a-f]{64} replySha256=[0-9a-f]{64}/);
+  assert.ok(!audit[0].includes("ORIGINAL") && !audit[0].includes("Ani final"));
   assert.notEqual((await runner.runMessageSending({ content: "Ani final" }, context()))?.cancel, true);
   assert.notEqual((await runner.runMessageSending({ content: "Ani final" }, context({ runId: undefined })))?.cancel, true);
   assert.equal((await runner.runMessageSending({ content: "ORIGINAL" }, context())).cancel, true);

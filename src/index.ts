@@ -171,6 +171,8 @@ export default definePluginEntry({
             controller.signal.throwIfAborted();
             if (!result.text?.trim() || /^(NO_REPLY|HEARTBEAT_OK)$/.test(result.text.trim())) throw new Error("empty or silent rewrite");
             owned.output = result.text;
+            // Hashes allow delivery verification without logging either reply body.
+            api.logger.info(`ani-persona: rewrite approved run=${event.runId ?? ctx.runId} agent=${selected.agentId} channel=${selected.channel} draftSha256=${digest(draft)} replySha256=${digest(result.text)}`);
             return result.text;
           } catch {
             controller.abort();

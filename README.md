@@ -90,7 +90,7 @@ npm test
 ## 範圍與限制
 
 - 保證範圍是已載入本 plugin、採上述安全設定的 Discord 標準文字回覆路徑。OpenClaw Control UI 的即時事件、第三方 plugin 自行發 HTTP，以及繞過標準 hooks 的路徑不在範圍內。不要讓其他 plugin 在核准之後改動送出文字。
-- 失敗採取消交付，所以使用者可能收不到回覆；log 會記錄改寫失敗，且不記錄原稿。未提供 `runId` 的終稿／跨重啟 durable replay 也會被取消。
+- 失敗採取消交付，所以使用者可能收不到回覆；log 會記錄改寫失敗。成功時只記錄 run、agent、channel 與原稿／改寫稿的 SHA-256，供交付核對，不記錄回覆本文。未提供 `runId` 的終稿／跨重啟 durable replay 也會被取消。
 - 原稿仍可能存在於宿主 transcript、模型記錄與 Control UI；本 plugin 替換的是 Discord 交付文字，沒有重寫歷史記錄。
 - 附件本體不改寫。特殊 citation control markers 等宿主文字轉換可能讓完整核准比對不一致，此時取消交付。
 - 每次改寫增加模型延遲與 token 用量，所有文字 references 都會進入內部請求。需要允許該 plugin 存取對話，並讓 Gateway 的 agent runtime 可呼叫所選模型。
