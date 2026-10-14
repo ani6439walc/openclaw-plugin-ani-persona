@@ -1,1 +1,1 @@
-# openclaw-plugin-ani
+# openclaw-plugin-ani-persona
